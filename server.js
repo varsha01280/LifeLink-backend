@@ -312,6 +312,59 @@ app.post("/api/blood-requests", async (req, res) => {
 });
 
 // ============================================================
+// ADMIN LOGIN
+// ============================================================
+
+app.post("/api/admin/login", async (req, res) => {
+  console.log("ADMIN LOGIN ROUTE CALLED");
+
+  try {
+    const { username, password } = req.body;
+
+    console.log("Admin username:", username);
+
+    // Fixed admin credentials
+    const ADMIN_USERNAME = "admin";
+    const ADMIN_PASSWORD = "admin123";
+
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Username and password are required",
+      });
+    }
+
+    if (
+      username.trim().toLowerCase() !== ADMIN_USERNAME ||
+      password !== ADMIN_PASSWORD
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid admin username or password",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Admin login successful",
+      admin: {
+        username: ADMIN_USERNAME,
+        role: "ADMIN",
+      },
+    });
+  } catch (error) {
+    console.error("ADMIN LOGIN ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Admin login failed",
+      error: error.message,
+    });
+  }
+});
+
+
+// ============================================================
 // START SERVER
 // ============================================================
 
