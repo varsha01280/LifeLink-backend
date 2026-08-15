@@ -363,6 +363,96 @@ app.post("/api/admin/login", async (req, res) => {
   }
 });
 
+// ============================================================
+// ADMIN - GET ALL HOSPITALS
+// ============================================================
+
+app.get("/api/admin/hospitals", async (req, res) => {
+  console.log("ADMIN HOSPITALS ROUTE CALLED");
+
+  try {
+    const [rows] = await db.query(`
+      SELECT
+        hospital_id,
+        hospital_name,
+        registration_number,
+        phone,
+        email,
+        address,
+        verification_status,
+        created_at
+      FROM hospitals
+      ORDER BY created_at DESC
+    `);
+
+    res.json({
+      success: true,
+      hospitals: rows,
+    });
+
+  } catch (error) {
+    console.error("ADMIN HOSPITALS ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch hospitals",
+      error: error.message,
+    });
+  }
+});
+
+// ============================================================
+// ADMIN - VERIFY / REJECT HOSPITAL
+// ============================================================
+
+app.put("/api/admin/hospitals/:id/verify", async (req, res) => {
+  console.log("ADMIN VERIFY HOSPITAL ROUTE CALLED");
+
+  try {
+    const hospitalId = req.params.id;
+    const { status } = req.body;
+
+    if (!["VERIFIED", "REJECTED"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid verification status",
+      });
+    }
+
+    const [result] = await db.query(
+      `
+      UPDATE hospitals
+      SET verification_status = ?
+      WHERE hospital_id = ?
+      `,
+      [status, hospitalId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Hospital not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message:
+        status === "VERIFIED"
+          ? "Hospital approved successfully"
+          : "Hospital rejected successfully",
+    });
+
+  } catch (error) {
+    console.error("ADMIN VERIFY ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to update hospital verification",
+      error: error.message,
+    });
+  }
+});
 
 // ============================================================
 // START SERVER
