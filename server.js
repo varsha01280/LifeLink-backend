@@ -14,6 +14,17 @@ const cors = require("cors");
 const db = require("./config/db");
 const dns = require("dns");
 
+console.log("DB_HOST =", process.env.DB_HOST);
+console.log("DB_PORT =", process.env.DB_PORT);
+console.log("DB_NAME =", process.env.DB_NAME);
+
+dns.lookup(process.env.DB_HOST, { all: true }, (err, addresses) => {
+  if (err) {
+    console.error("AIVEN DNS ERROR:", err);
+  } else {
+    console.log("AIVEN DNS SUCCESS:", addresses);
+  }
+});
 // ============================================================
 // CREATE APP
 // ============================================================
