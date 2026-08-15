@@ -235,6 +235,82 @@ dns.lookup(process.env.DB_HOST, (err, address, family) => {
     console.log("AIVEN DNS SUCCESS:", address, "IPv" + family);
   }
 });
+
+// ============================================================
+// CREATE BLOOD REQUEST
+// ============================================================
+
+app.post("/api/blood-requests", async (req, res) => {
+  console.log("BLOOD REQUEST ROUTE CALLED");
+
+  try {
+    const {
+      hospital_id,
+      blood_group,
+      units_required,
+      urgency,
+      patient_name,
+      reason,
+      latitude,
+      longitude,
+    } = req.body;
+
+    console.log("Blood request:", req.body);
+
+    // Basic validation
+    if (
+      !hospital_id ||
+      !blood_group ||
+      !units_required
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Hospital ID, blood group and units required are required",
+      });
+    }
+
+    const [result] = await db.query(
+      `INSERT INTO blood_requests
+      (
+        hospital_id,
+        blood_group,
+        units_required,
+        urgency,
+        patient_name,
+        reason,
+        latitude,
+        longitude
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        hospital_id,
+        blood_group,
+        units_required,
+        urgency || "NORMAL",
+        patient_name || null,
+        reason || null,
+        latitude || null,
+        longitude || null,
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Blood request created successfully",
+      request_id: result.insertId,
+    });
+  } catch (error) {
+    console.error("BLOOD REQUEST ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to create blood request",
+      error: error.message,
+    });
+  }
+});
+
 // ============================================================
 // START SERVER
 // ============================================================
