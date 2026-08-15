@@ -1,25 +1,40 @@
-const express = require("express");
-const cors = require("cors");
-const mysql = require("mysql2/promise");
+// ============================================================
+// LOAD ENVIRONMENT VARIABLES FIRST
+// ============================================================
+
 require("dotenv").config();
 
+
+// ============================================================
+// IMPORT PACKAGES
+// ============================================================
+
+const express = require("express");
+const cors = require("cors");
+const db = require("./config/db");
+const dns = require("dns");
+
+// ============================================================
+// CREATE APP
+// ============================================================
+
 const app = express();
+
+
+// ============================================================
+// MIDDLEWARE
+// ============================================================
 
 app.use(cors());
 app.use(express.json());
 
+
+// ============================================================
+// PORT
+// ============================================================
+
 const PORT = process.env.PORT || 5000;
 
-const db = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: Number(process.env.DB_PORT),
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
 
 // ============================================================
 // HOME
@@ -28,6 +43,7 @@ const db = mysql.createPool({
 app.get("/", (req, res) => {
   res.send("LifeLink Backend is running");
 });
+
 
 // ============================================================
 // DATABASE TEST
@@ -43,7 +59,7 @@ app.get("/api/test-db", async (req, res) => {
       result,
     });
   } catch (error) {
-    console.error(error);
+    console.error("DATABASE TEST ERROR:", error);
 
     res.status(500).json({
       success: false,
@@ -52,6 +68,7 @@ app.get("/api/test-db", async (req, res) => {
     });
   }
 });
+
 
 // ============================================================
 // DONOR LOGIN
@@ -100,6 +117,7 @@ app.post("/api/donor/login", async (req, res) => {
     res.json({
       success: true,
       message: "Donor login successful",
+
       donor: {
         donor_id: donor.donor_id,
         full_name: donor.full_name,
@@ -120,6 +138,7 @@ app.post("/api/donor/login", async (req, res) => {
     });
   }
 });
+
 
 // ============================================================
 // HOSPITAL LOGIN
@@ -176,6 +195,7 @@ app.post("/api/hospital/login", async (req, res) => {
     res.json({
       success: true,
       message: "Hospital login successful",
+
       hospital: {
         hospital_id: hospital.hospital_id,
         hospital_name: hospital.hospital_name,
@@ -197,10 +217,17 @@ app.post("/api/hospital/login", async (req, res) => {
   }
 });
 
+dns.lookup(process.env.DB_HOST, (err, address, family) => {
+  if (err) {
+    console.error("AIVEN DNS ERROR:", err);
+  } else {
+    console.log("AIVEN DNS SUCCESS:", address, "IPv" + family);
+  }
+});
 // ============================================================
 // START SERVER
 // ============================================================
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`LifeLink server running on port ${PORT}`);
 });
