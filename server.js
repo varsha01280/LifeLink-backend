@@ -150,6 +150,106 @@ app.post("/api/donor/login", async (req, res) => {
   }
 });
 
+// ============================================================
+// HOSPITAL REGISTRATION
+// ============================================================
+
+app.post("/api/hospitals/register", async (req, res) => {
+  console.log("HOSPITAL REGISTRATION ROUTE CALLED");
+
+  try {
+    const {
+      hospital_name,
+      registration_number,
+      phone,
+      email,
+      address,
+      password,
+    } = req.body;
+
+    console.log("Hospital registration:", hospital_name);
+
+    // Validate required fields
+    if (
+      !hospital_name ||
+      !registration_number ||
+      !phone ||
+      !email ||
+      !password
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "All required hospital fields must be filled",
+      });
+    }
+
+    // Check whether hospital already exists
+    const [existing] = await db.execute(
+      `SELECT hospital_id
+       FROM hospitals
+       WHERE registration_number = ?
+          OR LOWER(email) = LOWER(?)`,
+      [registration_number.trim(), email.trim()]
+    );
+
+    if (existing.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "A hospital with this registration number or email already exists",
+      });
+    }
+
+    // Create hospital as PENDING
+    const [result] = await db.execute(
+      `INSERT INTO hospitals
+       (
+         hospital_name,
+         registration_number,
+         phone,
+         email,
+         address,
+         password_hash,
+         verification_status
+       )
+       VALUES (?, ?, ?, ?, ?, ?, 'PENDING')`,
+      [
+        hospital_name.trim(),
+        registration_number.trim(),
+        phone.trim(),
+        email.trim(),
+        address ? address.trim() : null,
+        password,
+      ]
+    );
+
+    console.log(
+      "Hospital registered successfully. ID:",
+      result.insertId
+    );
+
+    return res.status(201).json({
+      success: true,
+      message:
+        "Hospital registration submitted successfully. Waiting for admin verification.",
+      hospital: {
+        hospital_id: result.insertId,
+        hospital_name: hospital_name.trim(),
+        registration_number: registration_number.trim(),
+        verification_status: "PENDING",
+      },
+    });
+  } catch (error) {
+    console.error("HOSPITAL REGISTRATION ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Hospital registration failed",
+      error: error.message,
+    });
+  }
+});
+
 
 // ============================================================
 // HOSPITAL LOGIN
