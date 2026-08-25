@@ -9,8 +9,12 @@ const mysql = require("mysql2/promise");
 // CREATE MYSQL CONNECTION POOL
 // ============================================================
 
+const host = process.env.DB_HOST || "localhost";
+const isRemote = host !== "localhost" && host !== "127.0.0.1";
+const useSSL = process.env.DB_SSL === "true" || process.env.DB_SSL === "1" || isRemote;
+
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || "localhost",
+  host: host,
 
   port: Number(process.env.DB_PORT) || 3306,
 
@@ -25,6 +29,14 @@ const pool = mysql.createPool({
   connectionLimit: 10,
 
   queueLimit: 0,
+
+  connectTimeout: 20000,
+
+  enableKeepAlive: true,
+
+  keepAliveInitialDelay: 0,
+
+  ssl: useSSL ? { rejectUnauthorized: false } : undefined,
 });
 
 
